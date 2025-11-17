@@ -1,0 +1,6 @@
+openpyxl>=3.1.2
+reportlab>=4.0.4
+tkcalendar>=1.6.1
+
+# Build tools (optional - only needed for creating EXE)
+pyinstaller>=6.0.0

@@ -1,0 +1,48 @@
+# Build & Distribution Files
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Database (keep structure, ignore data)
+database/clinic.db
+database/clinic.db-journal
+
+# Reports & Data (generated files)
+reports/*/
+data/*.xlsx
+!data/.gitkeep
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.log
