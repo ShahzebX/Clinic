@@ -8,6 +8,7 @@ from pathlib import Path
 
 from database.db_manager import PatientRecord
 from utils.pdf_generator import PdfGenerator
+from utils.helpers import get_clinic_data_folder
 
 DEFAULT_CLINIC_NAME = "Kashmiri Welfare Clinic & Maternity Home"
 DEFAULT_CLINIC_SUBTITLE = "Main Badin Road, Matli"
@@ -51,8 +52,8 @@ def main() -> None:
         "--output-dir",
         dest="output_dir",
         type=Path,
-        default=Path(__file__).resolve().parent / "reports",
-        help="Directory where the PDF should be written (defaults to the app reports folder).",
+        default=get_clinic_data_folder() / "pdf",
+        help="Directory where the PDF should be written (defaults to Documents/OPD Data/pdf).",
     )
     args = parser.parse_args()
 

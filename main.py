@@ -40,7 +40,7 @@ class ClinicApplication:
         self.database = DatabaseManager(base_dir / "database")
         self.excel_manager = ExcelManager(get_clinic_data_folder())
         self.pdf_generator = PdfGenerator(
-            base_dir / "reports",
+            get_clinic_data_folder() / "pdf",
             clinic_name,
             subtitle=CLINIC_SUBTITLE,
             doctors=CLINIC_DOCTORS,
@@ -64,6 +64,7 @@ class ClinicApplication:
             name=data["name"],
             father_name=data["father_name"],
             age=data["age"],
+            age_months=data["age_months"],
             gender=data["gender"],
             temperature=data["temperature"],
             bp=data["bp"],

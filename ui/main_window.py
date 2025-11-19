@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 import tkinter as tk
 from datetime import datetime
 from pathlib import Path
@@ -35,10 +34,7 @@ if TYPE_CHECKING:
 SaveCallback = Callable[[dict], "PatientRecord"]
 ReportCallback = Callable[["PatientRecord"], Path]
 
-CNIC_PATTERN = re.compile(r"^(\d{5}-\d{7}-\d|\d{13})$")
-BP_PATTERN = re.compile(r"^\d{2,3}/\d{2,3}$")
 FEES_OPTIONS = {"Normal": "Normal - Rs. 100", "Urgent": "Urgent - Rs. 200"}
-TEMP_RANGE_F = (80.0, 110.0)
 
 
 class _VerticalScrollFrame(ttk.Frame):
@@ -129,16 +125,18 @@ class MainWindow(tk.Tk):
 		self.name_var = tk.StringVar()
 		self.father_name_var = tk.StringVar()
 		self.age_var = tk.StringVar()
+		self.age_months_var = tk.StringVar()
 		self.gender_var = tk.StringVar(value="Female")
 		self.cnic_var = tk.StringVar()
 		self.temp_var = tk.StringVar(value="98.6")
 		self.bp_var = tk.StringVar(value="120/80")
+		# Use a StringVar for address (single-line entry) instead of a Text widget
+		self.address_var = tk.StringVar()
 		self.weight_var = tk.StringVar()
 		self.diabetic_var = tk.StringVar()
 		self.fees_var = tk.StringVar(value="Normal")
 		self.status_var = tk.StringVar(value="Ready")
 		self.last_saved_var = tk.StringVar(value="—")
-		self.address_text: Optional[tk.Text] = None
 
 	def _build_layout(self) -> None:
 		# Main container without scrolling
@@ -241,6 +239,50 @@ class MainWindow(tk.Tk):
 		)
 		self.status_label.grid(row=1, column=0, columnspan=2, pady=(5, 0), sticky="w")
 
+		# Developer footer
+		footer_frame = ttk.Frame(main_frame)
+		footer_frame.grid(row=13, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+		
+		# Contact info line with clickable LinkedIn
+		contact_frame = ttk.Frame(footer_frame)
+		contact_frame.pack(side="top", pady=(5, 0))
+		
+		contact_label = ttk.Label(
+			contact_frame,
+			text="Developed by M.Shahzeb | Custom Software Solutions | +92 312 7021303 | ",
+			font=("Segoe UI", 8),
+			foreground="#666666"
+		)
+		contact_label.pack(side="left")
+		
+		# Clickable LinkedIn link
+		linkedin_label = ttk.Label(
+			contact_frame,
+			text="LinkedIn",
+			font=("Segoe UI", 8, "underline"),
+			foreground="#0066cc",
+			cursor="hand2"
+		)
+		linkedin_label.pack(side="left")
+		linkedin_label.bind("<Button-1>", lambda e: self._open_linkedin())
+
+		# Bind global Enter to invoke focused button or radiobutton
+		self.bind("<Return>", self._handle_global_enter)
+
+	def _handle_global_enter(self, event: tk.Event) -> str:
+		"""Handle Enter key globally - invoke focused button or radiobutton."""
+		focused = self.focus_get()
+		if focused:
+			# If a Button is focused, invoke it
+			if isinstance(focused, (ttk.Button, tk.Button)):
+				focused.invoke()
+				return "break"
+			# If a radiobutton is focused, invoke its callback
+			if isinstance(focused, (ttk.Radiobutton, tk.Radiobutton)):
+				focused.invoke()
+				return "break"
+		return ""
+
 	def _add_date_opd_row(self, parent: ttk.Frame, row: int) -> None:
 		frame = ttk.Frame(parent)
 		frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=3)
@@ -282,7 +324,11 @@ class MainWindow(tk.Tk):
 
 		age_entry = ttk.Entry(frame, textvariable=self.age_var, width=6)
 		age_entry.grid(row=0, column=0, sticky="w")
-		ttk.Label(frame, text="years").grid(row=0, column=1, padx=(4, 16))
+		ttk.Label(frame, text="years").grid(row=0, column=1, padx=(4, 8))
+
+		age_months_entry = ttk.Entry(frame, textvariable=self.age_months_var, width=6)
+		age_months_entry.grid(row=0, column=2, sticky="w")
+		ttk.Label(frame, text="months").grid(row=0, column=3, padx=(4, 16))
 
 		male_btn = ttk.Radiobutton(
 			frame,
@@ -290,7 +336,9 @@ class MainWindow(tk.Tk):
 			variable=self.gender_var,
 			value="Male",
 		)
-		male_btn.grid(row=0, column=2, padx=(0, 8))
+		male_btn.grid(row=0, column=4, padx=(0, 8))
+		# Bind Enter to select Male when focused
+		male_btn.bind("<Return>", lambda e: self.gender_var.set("Male"))
 
 		female_btn = ttk.Radiobutton(
 			frame,
@@ -298,14 +346,15 @@ class MainWindow(tk.Tk):
 			variable=self.gender_var,
 			value="Female",
 		)
-		female_btn.grid(row=0, column=3, padx=(0, 8))
+		female_btn.grid(row=0, column=5, padx=(0, 8))
+		# Bind Enter to select Female when focused
+		female_btn.bind("<Return>", lambda e: self.gender_var.set("Female"))
 
 	def _add_address_row(self, parent: ttk.Frame, row: int) -> None:
-		ttk.Label(parent, text="Address").grid(row=row, column=0, sticky="nw", pady=3)
-		text_widget = tk.Text(parent, height=4, width=46, wrap="word")
-		text_widget.configure(font=("Segoe UI", 11))
-		text_widget.grid(row=row, column=1, sticky="ew", pady=3)
-		self.address_text = text_widget
+		ttk.Label(parent, text="Address").grid(row=row, column=0, sticky="w", pady=3)
+		# Single-line address entry (smaller, like name fields)
+		address_entry = ttk.Entry(parent, textvariable=self.address_var, width=46)
+		address_entry.grid(row=row, column=1, sticky="ew", pady=3)
 
 	def _add_temperature_bp_row(self, parent: ttk.Frame, row: int) -> None:
 		ttk.Label(parent, text="Temperature (°F)").grid(
@@ -383,106 +432,54 @@ class MainWindow(tk.Tk):
 				# If exit handler fails, just quit
 				self.quit()
 
+	def _open_linkedin(self) -> None:
+		"""Open LinkedIn profile in default browser."""
+		import webbrowser
+		webbrowser.open("https://www.linkedin.com/in/muhammad-shahzeb-cs/")  # Replace with your actual LinkedIn URL
+
 	def _collect_form_data(self) -> Optional[dict]:
+		# Accept any date format - no validation
+		date_input = self.date_var.get().strip()
 		try:
-			visit_date = parse_date(self.date_var.get().strip())
+			visit_date = parse_date(date_input) if date_input else datetime.now()
 		except ValueError:
-			messagebox.showwarning(
-				"Validation", "Date must follow the DD/MM/YYYY format (e.g. 25/10/2025)."
-			)
-			return None
+			visit_date = datetime.now()  # Default to today if invalid
 
+		# Accept any input - no restrictions
 		opd_no = self.opd_no_var.get().strip()
-		if not opd_no:
-			messagebox.showwarning("Validation", "OPD number is required.")
-			return None
-
 		name = self.name_var.get().strip()
-		if not name:
-			messagebox.showwarning("Validation", "Patient name is required.")
-			return None
-
 		father_name = self.father_name_var.get().strip()
-		if not father_name:
-			messagebox.showwarning(
-				"Validation", "Father / Husband name cannot be left blank."
-			)
-			return None
-
 		age_raw = self.age_var.get().strip()
-		try:
-			age = int(age_raw)
-			if age <= 0:
-				raise ValueError
-		except ValueError:
-			messagebox.showwarning(
-				"Validation", "Please enter a valid age (positive whole number)."
-			)
-			return None
-
+		age_months_raw = self.age_months_var.get().strip()
 		gender = self.gender_var.get()
-		if gender not in {"Male", "Female"}:
-			messagebox.showwarning("Validation", "Select Male or Female for sex.")
-			return None
-
 		cnic_raw = self.cnic_var.get().strip()
-		if cnic_raw and not CNIC_PATTERN.match(cnic_raw):
-			messagebox.showwarning(
-				"Validation",
-				"CNIC must be 13 digits (with or without dashes), e.g. 12345-1234567-1.",
-			)
-			return None
-
-		address = (self.address_text.get("1.0", "end") if self.address_text else "").strip()
-		if not address:
-			messagebox.showwarning("Validation", "Address is required.")
-			return None
-
+		address = self.address_var.get().strip()
 		temperature_raw = self.temp_var.get().strip()
-		try:
-			temperature = float(temperature_raw)
-			if not (TEMP_RANGE_F[0] <= temperature <= TEMP_RANGE_F[1]):
-				messagebox.showwarning(
-					"Validation",
-					"Temperature should be between 80°F and 110°F.",
-				)
-				return None
-		except ValueError:
-			messagebox.showwarning("Validation", "Temperature must be a numeric value.")
-			return None
-
 		bp_value = self.bp_var.get().strip()
-		if not BP_PATTERN.match(bp_value):
-			messagebox.showwarning(
-				"Validation",
-				"Blood pressure must follow the systolic/diastolic format (e.g. 120/80).",
-			)
-			return None
 
+		# Try to convert age to float, accept any value (including negative and decimals)
 		try:
-			weight = coerce_optional_float(self.weight_var.get())
-			if weight is not None and weight <= 0:
-				raise ValueError
+			age = float(age_raw) if age_raw else 0.0
 		except ValueError:
-			messagebox.showwarning(
-				"Validation", "Weight must be a positive number if provided."
-			)
-			return None
+			age = 0.0
 
+		# Try to convert age_months to int, accept any value
 		try:
-			diabetic = coerce_optional_float(self.diabetic_var.get())
-			if diabetic is not None and diabetic <= 0:
-				raise ValueError
+			age_months = int(age_months_raw) if age_months_raw else 0
 		except ValueError:
-			messagebox.showwarning(
-				"Validation", "Diabetic reading must be a positive number if provided."
-			)
-			return None
+			age_months = 0
+
+		# Try to convert temperature to float, accept any value
+		try:
+			temperature = float(temperature_raw) if temperature_raw else 98.6
+		except ValueError:
+			temperature = 98.6
+
+		# Accept weight and diabetic as-is (optional floats)
+		weight = coerce_optional_float(self.weight_var.get())
+		diabetic = coerce_optional_float(self.diabetic_var.get())
 
 		fees_type = self.fees_var.get()
-		if fees_type not in FEES_OPTIONS:
-			messagebox.showwarning("Validation", "Select a fees type (Normal or Urgent).")
-			return None
 
 		return {
 			"date": visit_date,
@@ -490,6 +487,7 @@ class MainWindow(tk.Tk):
 			"name": name,
 			"father_name": father_name,
 			"age": age,
+			"age_months": age_months,
 			"gender": gender,
 			"cnic": cnic_raw or None,
 			"address": address,
@@ -513,6 +511,7 @@ class MainWindow(tk.Tk):
 		self.name_var.set("")
 		self.father_name_var.set("")
 		self.age_var.set("")
+		self.age_months_var.set("")
 		self.gender_var.set("Female")
 		self.cnic_var.set("")
 		self.temp_var.set("98.6")
@@ -520,8 +519,7 @@ class MainWindow(tk.Tk):
 		self.weight_var.set("")
 		self.diabetic_var.set("")
 		self.fees_var.set("Normal")
-		if self.address_text:
-			self.address_text.delete("1.0", "end")
+		self.address_var.set("")
 
 		self._last_record = None
 		self.last_saved_var.set("—")

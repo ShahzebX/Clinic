@@ -36,8 +36,8 @@ class PdfGenerator:
 		doctors: Iterable[tuple[str, str]] | None = None,
 		footer_days: str = "Monday to Saturday",
 		footer_time: str = "Time: 04 P.M to 10 P.M",
-		footer_sunday_hours: str = "Sunday Time: 10 A.M to 04 P.M",
-		footer_credit: str = "Software Developed by M.Shahzeb | Contact: +92 312 7021303",
+		footer_sunday_hours: str = "Sunday Time: 10 A.M to 10 P.M",
+		footer_credit: str = "Developed by M.Shahzeb | Custom Software Solutions | +92 312 7021303",
 	) -> None:
 		self.reports_dir = Path(reports_dir)
 		self.clinic_name = clinic_name
@@ -118,7 +118,7 @@ class PdfGenerator:
 			doc.drawString(start_x + label_width + 4, text_y, value)
 
 		draw_label_value(inner_margin, y, "Date", format_date(record.date))
-		draw_label_value_right(width - inner_margin, y, "OPD No.", record.opd_no or "—")
+		draw_label_value_right(width - inner_margin, y, "OPD No ", record.opd_no or "—")
 		y -= line_gap+3
 
 		# Removed left_x and right_x redefinition - using inner_margin directly
@@ -127,7 +127,11 @@ class PdfGenerator:
 		y -= line_gap
 		draw_label_value(inner_margin, y, "Father / Husband Name", record.father_name or "—")
 		y -= line_gap
-		draw_label_value(inner_margin, y, "Age", str(record.age))
+		# Display age with months
+		age_text = f"{record.age} years"
+		if hasattr(record, 'age_months') and record.age_months:
+			age_text += f" {record.age_months} months"
+		draw_label_value(inner_margin, y, "Age", age_text)
 		draw_label_value_right(width - inner_margin - 17, y, "Sex", record.gender)
 		y -= line_gap
 		draw_label_value(inner_margin, y, "CNIC (if available)", record.cnic or "—")
@@ -188,14 +192,14 @@ class PdfGenerator:
 		doc.drawString(left_col_x0, follow_label_y, "Follow-Up:")
 
 		# VITALS section
-		vitals_title_y = follow_label_y - 70
+		vitals_title_y = follow_label_y - 30
 		doc.setFont("Helvetica-Bold", 10)
 		doc.drawString(left_col_x0, vitals_title_y, "VITALS")
 
 
 		line_x_start = left_col_x0 + 6
 		line_x_end = left_col_x1 - 6
-		row_gap = 25
+		row_gap = 45
 		current_y = vitals_title_y - 20
 		
 		# Prepare vitals data from record

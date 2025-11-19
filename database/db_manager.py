@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS patients (
 	opd_no TEXT NOT NULL,
 	name TEXT NOT NULL,
 	father_name TEXT,
-	age INTEGER NOT NULL,
+	age REAL NOT NULL,
+	age_months INTEGER DEFAULT 0,
 	gender TEXT NOT NULL,
 	cnic TEXT,
 	address TEXT,
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS patients (
 EXTRA_COLUMNS: dict[str, str] = {
 	"opd_no": "opd_no TEXT DEFAULT ''",
 	"father_name": "father_name TEXT DEFAULT ''",
+	"age_months": "age_months INTEGER DEFAULT 0",
 	"cnic": "cnic TEXT",
 	"address": "address TEXT",
 	"weight": "weight REAL",
@@ -54,7 +56,8 @@ class PatientRecord:
 	opd_no: str
 	name: str
 	father_name: str
-	age: int
+	age: float
+	age_months: int
 	gender: str
 	cnic: Optional[str]
 	address: str
@@ -72,6 +75,7 @@ class PatientRecord:
 			self.name,
 			self.father_name,
 			self.age,
+			self.age_months,
 			self.gender,
 			self.cnic,
 			self.address,
@@ -91,6 +95,7 @@ class PatientRecord:
 			name=row["name"],
 			father_name=row["father_name"] or "",
 			age=row["age"],
+			age_months=row.get("age_months") or 0,
 			gender=row["gender"],
 			cnic=row["cnic"] or None,
 			address=row["address"] or "",
@@ -142,8 +147,8 @@ class DatabaseManager:
 		"""Insert a new patient record and return the new row id."""
 
 		query = (
-			"INSERT INTO patients (date, opd_no, name, father_name, age, gender, cnic, address, temperature, bp, weight, diabetic, fees_type) "
-			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+			"INSERT INTO patients (date, opd_no, name, father_name, age, age_months, gender, cnic, address, temperature, bp, weight, diabetic, fees_type) "
+			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 		)
 		with self._connection:
 			cursor = self._connection.execute(query, record.to_db_tuple())
@@ -154,8 +159,8 @@ class DatabaseManager:
 		"""Insert multiple patient records in a single transaction."""
 
 		query = (
-			"INSERT INTO patients (date, opd_no, name, father_name, age, gender, cnic, address, temperature, bp, weight, diabetic, fees_type) "
-			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+			"INSERT INTO patients (date, opd_no, name, father_name, age, age_months, gender, cnic, address, temperature, bp, weight, diabetic, fees_type) "
+			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 		)
 		payload = [rec.to_db_tuple() for rec in records]
 		with self._connection:
